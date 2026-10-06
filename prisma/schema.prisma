@@ -1,0 +1,117 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Student {
+  id                         String                     @id @default(cuid())
+  timestamp                  String? // Original CSV timestamp
+  emailAddress               String?
+  fullName                   String
+  gender                     String?
+  dob                        String?
+  contactNumber              String?
+  emailId                    String?
+  registrationNo             String?
+  college                    String?
+  course                     String?
+  passingYear                Int?
+  specialization             String?
+  class10Percentage          Float?
+  class12Percentage          Float?
+  graduationCGPA             Float?
+  atsScore                   Float?
+  cfRating                   Float?
+  leetcodeRating             Float?
+  codechefRating             Float?
+  hackerRankUsername         String?
+  hackerRankId               String?
+  hackerRankMatchStatus      String?
+  hackerRankMatchType        String?
+  hackerRankScore            Float?
+  hackerRankRank             Int?
+  hackerRankContestTimeTaken Float?
+  hackerRankQuestionsSolved  Int?
+  hackerRankQuestionsJson    String?
+  hackerRankQuestion1Minutes Float?
+  hackerRankQuestion2Minutes Float?
+  hackerRankLastSyncedAt     DateTime?
+  // Primary contest (Contests tab) result applied to the dashboard
+  hackerRankContestSlug      String?
+  hackerRankContestName      String?
+  hackerRankResult           String? // pass | fail | absent (null = needs mapping / no cutoff)
+  hackerRankResultSource     String? // auto | manual
+  hackerRankResultOverrides  HackerRankResultOverride[]
+  activeBacklogs             Boolean                    @default(false)
+  activeBacklogsRaw          String? // Preserves original text like "No", "Yes", "None", etc.
+  resumeUrl                  String?
+  stage                      String                     @default("New")
+  comments                   Comment[]
+  createdAt                  DateTime                   @default(now())
+  updatedAt                  DateTime                   @updatedAt
+
+  @@index([registrationNo])
+  @@index([emailId])
+  @@index([emailAddress])
+  @@index([stage])
+  @@index([college])
+  @@index([passingYear])
+  @@index([hackerRankUsername])
+  @@index([hackerRankMatchStatus])
+  @@index([hackerRankScore])
+  @@index([hackerRankQuestionsSolved])
+  @@index([hackerRankQuestion1Minutes])
+  @@index([hackerRankQuestion2Minutes])
+  @@index([hackerRankResult])
+}
+
+model HackerRankSync {
+  id           String   @id
+  contestSlug  String
+  lastSyncedAt DateTime
+}
+
+// Cached responses for the separate HackerRank admin account (Contests tab).
+model HackerRankAdminSnapshot {
+  key       String   @id
+  data      String
+  fetchedAt DateTime
+}
+
+// Per-contest settings for the Contests tab. At most one row has isPrimary = true.
+model HackerRankContestSetting {
+  slug      String    @id
+  name      String
+  passScore Float?
+  isPrimary Boolean   @default(false)
+  appliedAt DateTime?
+  updatedAt DateTime  @updatedAt
+}
+
+// Manual Pass/Fail decisions that win over the score cutoff.
+model HackerRankResultOverride {
+  studentId   String
+  contestSlug String
+  result      String // pass | fail
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@id([studentId, contestSlug])
+  @@index([contestSlug])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  comment   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([studentId])
+}

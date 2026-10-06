@@ -1,0 +1,11 @@
+Timestamp,Full Name,Email Address,Contact Number,Gender,DOB,Registration No.,College/ Institute Name:,Course/ Degree:,Passing Year,Specialization / Branch:,Class 10 Percentage,Class 12 Percentage,Current Graduation CGPA,Do you have any active backlogs ?,Resume URL
+2024-03-01 10:00:00,Aarav Singhania,aarav.singhania@example.com,+91 9876543230,Male,2002-04-15,REG-2024-101,IIIT Delhi,B.Tech,2025,Computer Science,94.5,92.0,8.85,No,https://example.com/resumes/aarav.pdf
+2024-03-01 11:30:00,Riya Sen,riya.sen@example.com,+91 9876543231,Female,2003-01-20,REG-2024-102,NIT Warangal,B.Tech,2025,Information Technology,96.2,93.5,9.20,No,https://example.com/resumes/riya.pdf
+2024-03-01 14:15:00,Aditya Roy,aditya.roy@example.com,+91 9876543232,Male,2002-09-12,REG-2024-103,BITS Pilani,B.E.,2025,Electronics and Communication,88.0,84.5,7.95,Yes (1 active backlog),https://example.com/resumes/aditya.pdf
+2024-03-02 09:45:00,Kavita Menon,kavita.menon@example.com,+91 9876543233,Female,2003-05-18,REG-2024-104,IIT Madras,B.Tech,2026,Data Science and AI,97.5,95.0,9.45,No,https://example.com/resumes/kavita.pdf
+2024-03-02 12:20:00,Siddharth Das,siddharth.das@example.com,+91 9876543234,Male,2001-11-29,REG-2024-105,NIT Trichy,B.Tech,2024,Mechanical Engineering,81.0,78.5,7.10,No,https://example.com/resumes/siddharth.pdf
+2024-03-02 15:50:00,Meera Nair,meera.nair@example.com,+91 9876543235,Female,2002-07-08,REG-2024-106,IIIT Bangalore,M.Tech,2025,Computer Science,92.0,89.5,8.70,No,https://example.com/resumes/meera.pdf
+2024-03-03 10:10:00,Varun Kapoor,varun.kapoor@example.com,+91 9876543236,Male,2002-03-24,REG-2024-107,DTU Delhi,B.Tech,2025,Software Engineering,89.5,86.0,8.35,No,https://example.com/resumes/varun.pdf
+2024-03-03 13:40:00,Ishita Mukherjee,ishita.mukherjee@example.com,+91 9876543237,Female,2003-02-14,REG-2024-108,Jadavpur University,B.E.,2025,Information Technology,93.0,91.0,8.90,No,https://example.com/resumes/ishita.pdf
+2024-03-03 16:30:00,Nikhil Saxena,nikhil.saxena@example.com,+91 9876543238,Male,2001-08-30,REG-2024-109,IIIT Jabalpur,B.Tech,2024,Computer Science,84.0,80.5,7.50,Yes (Maths),https://example.com/resumes/nikhil.pdf
+2024-03-04 11:00:00,Pooja Hegde,pooja.hegde@example.com,+91 9876543239,Female,2002-10-05,REG-2024-110,NIT Surathkal,B.Tech,2025,Electrical Engineering,91.5,88.0,8.40,No,https://example.com/resumes/pooja.pdf
