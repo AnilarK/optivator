@@ -177,6 +177,9 @@ async function testSession() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hr-admin-test-'));
   process.env.HACKERRANK_ADMIN_SESSION_FILE = path.join(tempDir, 'session.json');
   process.env.HACKERRANK_ADMIN_BASE_URL = 'https://hr.test';
+  // Local mode (a database is configured); the session code never queries it.
+  process.env.DATABASE_URL = 'file:./unused-by-session-tests.db';
+  delete process.env.VERCEL;
   const originalFetch = globalThis.fetch;
   const mock = new MockHackerRank();
   globalThis.fetch = mock.fetch as typeof fetch;
@@ -282,7 +285,9 @@ async function testStatelessDeployment() {
   process.env.HACKERRANK_ADMIN_LOGIN = 'admin@example.com';
   process.env.HACKERRANK_ADMIN_PASSWORD = 'right-password';
   delete process.env.HACKERRANK_ADMIN_SESSION_COOKIE;
-  process.env.VERCEL = '1';
+  // No DATABASE_URL (as on Vercel) -> stateless, even when VERCEL is not exposed.
+  delete process.env.DATABASE_URL;
+  delete process.env.VERCEL;
   const originalFetch = globalThis.fetch;
   const mock = new MockHackerRank();
   globalThis.fetch = mock.fetch as typeof fetch;
@@ -316,7 +321,6 @@ async function testStatelessDeployment() {
       'Prisma is never loaded in stateless mode',
     );
   } finally {
-    delete process.env.VERCEL;
     globalThis.fetch = originalFetch;
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
