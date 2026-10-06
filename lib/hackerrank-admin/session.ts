@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { isStatelessDeployment } from '@/lib/runtime';
 
 /**
  * Session manager for the separate HackerRank *administrator* account used by the
@@ -198,6 +199,8 @@ function encryptionKey(config: AdminConfig): Buffer | null {
 }
 
 async function saveSession(session: StoredSession | null, config: AdminConfig) {
+  // Stateless deployments (Vercel) keep the session in memory only; nothing is written to disk.
+  if (isStatelessDeployment()) return;
   try {
     if (!session) {
       await fs.rm(sessionFile(), { force: true });
@@ -229,6 +232,7 @@ async function saveSession(session: StoredSession | null, config: AdminConfig) {
 }
 
 async function loadSession(config: AdminConfig): Promise<StoredSession | null> {
+  if (isStatelessDeployment()) return null;
   try {
     const payload = JSON.parse(await fs.readFile(sessionFile(), 'utf8'));
     let session: StoredSession | null = null;

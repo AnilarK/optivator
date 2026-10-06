@@ -136,7 +136,7 @@ export function ConnectionPanel({
           <KeyRound className="h-4 w-4" /> Connect a HackerRank account
         </div>
         <p className="mt-2">
-          Add the admin account to the server <code className="font-mono">.env</code> (never commit it), then restart the app:
+          Add the admin account to the server environment — <code className="font-mono">.env</code> locally (never commit it), or the project&apos;s Environment Variables on Vercel — then restart or redeploy:
         </p>
         <pre className="mt-2 rounded-lg bg-white border border-indigo-100 p-3 font-mono text-[11px] text-slate-700 overflow-x-auto">{`HACKERRANK_ADMIN_LOGIN='your-username-or-email'
 HACKERRANK_ADMIN_PASSWORD='your-password'`}</pre>

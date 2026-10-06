@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminContestDetail } from '@/lib/hackerrank-admin/contests';
-import { applyPrimaryContest, getContestMappingView, getPrimarySetting } from '@/lib/hackerrank-admin/primary';
 import { getAdminSessionStatus } from '@/lib/hackerrank-admin/session';
+import { isStatelessDeployment } from '@/lib/runtime';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +12,16 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
   }
   const refresh = request.nextUrl.searchParams.get('refresh') === '1';
   const result = await getAdminContestDetail(slug, refresh);
+  const status = result.error && !result.data ? (result.error.code === 'not_found' ? 404 : 502) : 200;
+
+  // Primary contest + student mapping need the database; stateless deployments return contest data only.
+  if (isStatelessDeployment()) {
+    const session = await getAdminSessionStatus();
+    return NextResponse.json({ success: !result.error || Boolean(result.data), ...result, mapping: null, session }, { status });
+  }
+
+  // Imported lazily so Prisma is only loaded on the local, database-backed path.
+  const { applyPrimaryContest, getContestMappingView, getPrimarySetting } = await import('@/lib/hackerrank-admin/primary');
 
   // Fresh data for the primary contest flows straight to the dashboard.
   if (refresh && result.data && !result.error) {
@@ -23,6 +33,5 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
     getAdminSessionStatus(),
     result.data ? getContestMappingView(slug, result.data).catch(() => null) : Promise.resolve(null),
   ]);
-  const status = result.error && !result.data ? (result.error.code === 'not_found' ? 404 : 502) : 200;
   return NextResponse.json({ success: !result.error || Boolean(result.data), ...result, mapping, session }, { status });
 }

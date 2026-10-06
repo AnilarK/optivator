@@ -1,5 +1,5 @@
-import prisma from '@/lib/prisma';
 import { fetchAllHackerRankPages } from '@/lib/hackerrank';
+import { isStatelessDeployment } from '@/lib/runtime';
 import { adminRequest, getAdminConfig, HackerRankAdminError } from '@/lib/hackerrank-admin/session';
 import {
   AdminContestSummary,
@@ -110,9 +110,15 @@ async function fetchProfileNames(usernames: string[]): Promise<{ names: Record<s
   return { names, failures };
 }
 
-// ---------- snapshot cache ----------
+// ---------- snapshot cache (local only) ----------
+
+// Imported lazily so the stateless (Vercel) path never loads Prisma.
+async function db() {
+  return (await import('@/lib/prisma')).default;
+}
 
 async function readSnapshot<T>(key: string): Promise<{ data: T; fetchedAt: Date } | null> {
+  const prisma = await db();
   const row = await prisma.hackerRankAdminSnapshot.findUnique({ where: { key } });
   if (!row) return null;
   try {
@@ -124,6 +130,7 @@ async function readSnapshot<T>(key: string): Promise<{ data: T; fetchedAt: Date 
 
 async function writeSnapshot(key: string, data: unknown, fetchedAt: Date) {
   const json = JSON.stringify(data);
+  const prisma = await db();
   await prisma.hackerRankAdminSnapshot.upsert({
     where: { key },
     create: { key, data: json, fetchedAt },
@@ -142,8 +149,19 @@ function errorInfo(error: unknown) {
 /**
  * Returns the cached snapshot unless `refresh` is requested (or nothing is cached yet).
  * A failed refresh never destroys the previous snapshot: it is returned with `stale: true` and the error.
+ * On a stateless deployment there is no snapshot store: every call fetches live from HackerRank.
  */
 async function cached<T>(key: string, refresh: boolean, load: () => Promise<T>): Promise<CachedResult<T>> {
+  if (isStatelessDeployment()) {
+    try {
+      const fetchedAt = new Date();
+      const data = await load();
+      return { data, fetchedAt: fetchedAt.toISOString(), fromCache: false, stale: false, error: null };
+    } catch (error) {
+      if (!(error instanceof HackerRankAdminError)) console.error('HackerRank admin fetch failed:', error instanceof Error ? error.message : error);
+      return { data: null, fetchedAt: null, fromCache: false, stale: false, error: errorInfo(error) };
+    }
+  }
   const existing = await readSnapshot<T>(key);
   if (existing && !refresh) {
     return { data: existing.data, fetchedAt: existing.fetchedAt.toISOString(), fromCache: true, stale: false, error: null };

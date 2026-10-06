@@ -272,6 +272,56 @@ async function testSession() {
   }
 }
 
+// ---------- stateless (Vercel) mode: no disk, no database ----------
+
+async function testStatelessDeployment() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hr-admin-stateless-'));
+  const sessionFile = path.join(tempDir, 'session.json');
+  process.env.HACKERRANK_ADMIN_SESSION_FILE = sessionFile;
+  process.env.HACKERRANK_ADMIN_BASE_URL = 'https://hr.test';
+  process.env.HACKERRANK_ADMIN_LOGIN = 'admin@example.com';
+  process.env.HACKERRANK_ADMIN_PASSWORD = 'right-password';
+  delete process.env.HACKERRANK_ADMIN_SESSION_COOKIE;
+  process.env.VERCEL = '1';
+  const originalFetch = globalThis.fetch;
+  const mock = new MockHackerRank();
+  globalThis.fetch = mock.fetch as typeof fetch;
+
+  try {
+    resetAdminSessionState();
+    const { getAdminContests } = await import('../lib/hackerrank-admin/contests');
+
+    // Fetches live, every call (no snapshot cache), and never writes the session to disk
+    const first = await getAdminContests();
+    assert.equal(first.error, null);
+    assert.deepEqual(first.data?.contests.map((contest) => contest.slug), ['c1']);
+    assert.equal(first.fromCache, false);
+    const contestCalls = () => mock.calls.filter((call) => call === 'GET /rest/administration/contests').length;
+    const before = contestCalls();
+    await getAdminContests();
+    assert.equal(contestCalls(), before + 1, 'no snapshot cache: every call hits HackerRank');
+    assert.equal(mock.logins, 1, 'in-memory session reused within the instance');
+    assert.equal(fs.existsSync(sessionFile), false, 'session is never written to disk');
+    assert.equal((await getAdminSessionStatus()).connected, true);
+
+    // Failures return the error without stale data
+    globalThis.fetch = (async () => { throw new TypeError('fetch failed'); }) as typeof fetch;
+    const failed = await getAdminContests();
+    assert.equal(failed.data, null);
+    assert.equal(failed.stale, false);
+    assert.equal(failed.error?.code, 'network');
+
+    assert.ok(
+      !Object.keys(require.cache).some((file) => /[\\/]lib[\\/]prisma\.ts$/.test(file) || file.includes(`${path.sep}.prisma${path.sep}client`)),
+      'Prisma is never loaded in stateless mode',
+    );
+  } finally {
+    delete process.env.VERCEL;
+    globalThis.fetch = originalFetch;
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
 function testMapping() {
   const participants = [
     { username: 'Sagar_G', name: 'SAGAR GUPTA', score: 100 },
@@ -332,7 +382,7 @@ function testMapping() {
 testAnalytics();
 testCookieJar();
 testMapping();
-testSession().then(() => {
+testSession().then(testStatelessDeployment).then(() => {
   console.log('HackerRank admin (contests tab) tests passed.');
 }).catch((error) => {
   console.error(error);

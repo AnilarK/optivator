@@ -225,13 +225,16 @@ export default function ContestDetailPage({ params }: { params: { slug: string }
               </div>
             </section>
 
-            <PrimaryContestPanel
-              slug={contest.slug}
-              contestName={contest.name}
-              maxScore={analytics.overview.maxPossibleScore ?? analytics.overview.highestScore}
-              mapping={mapping}
-              onChanged={reload}
-            />
+            {/* Primary contest + student mapping are database-backed and absent on stateless deployments. */}
+            {mapping && (
+              <PrimaryContestPanel
+                slug={contest.slug}
+                contestName={contest.name}
+                maxScore={analytics.overview.maxPossibleScore ?? analytics.overview.highestScore}
+                mapping={mapping}
+                onChanged={reload}
+              />
+            )}
 
             {/* Overview */}
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
