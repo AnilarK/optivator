@@ -21,17 +21,21 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
   }
 
   // Imported lazily so Prisma is only loaded on the local, database-backed path.
-  const { applyPrimaryContest, getContestMappingView, getPrimarySetting } = await import('@/lib/hackerrank-admin/primary');
+  // Database problems only drop the mapping; the contest data is still returned.
+  let mapping = null;
+  try {
+    const { applyPrimaryContest, getContestMappingView, getPrimarySetting } = await import('@/lib/hackerrank-admin/primary');
 
-  // Fresh data for the primary contest flows straight to the dashboard.
-  if (refresh && result.data && !result.error) {
-    const primary = await getPrimarySetting();
-    if (primary?.slug === slug) await applyPrimaryContest().catch((error) => console.error('Applying primary contest failed:', error));
+    // Fresh data for the primary contest flows straight to the dashboard.
+    if (refresh && result.data && !result.error) {
+      const primary = await getPrimarySetting();
+      if (primary?.slug === slug) await applyPrimaryContest().catch((error) => console.error('Applying primary contest failed:', error));
+    }
+    mapping = result.data ? await getContestMappingView(slug, result.data).catch(() => null) : null;
+  } catch (error) {
+    console.error('Contest mapping unavailable:', error instanceof Error ? error.message : error);
   }
 
-  const [session, mapping] = await Promise.all([
-    getAdminSessionStatus(),
-    result.data ? getContestMappingView(slug, result.data).catch(() => null) : Promise.resolve(null),
-  ]);
+  const session = await getAdminSessionStatus();
   return NextResponse.json({ success: !result.error || Boolean(result.data), ...result, mapping, session }, { status });
 }

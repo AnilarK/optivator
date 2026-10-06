@@ -162,14 +162,20 @@ async function cached<T>(key: string, refresh: boolean, load: () => Promise<T>):
       return { data: null, fetchedAt: null, fromCache: false, stale: false, error: errorInfo(error) };
     }
   }
-  const existing = await readSnapshot<T>(key);
+  // The snapshot store is an optimisation: if the database is unavailable, fetch live instead of failing.
+  const existing = await readSnapshot<T>(key).catch((error) => {
+    console.error('HackerRank snapshot read failed; fetching live:', error instanceof Error ? error.message : error);
+    return null;
+  });
   if (existing && !refresh) {
     return { data: existing.data, fetchedAt: existing.fetchedAt.toISOString(), fromCache: true, stale: false, error: null };
   }
   try {
     const fetchedAt = new Date();
     const data = await load();
-    await writeSnapshot(key, data, fetchedAt);
+    await writeSnapshot(key, data, fetchedAt).catch((error) => {
+      console.error('HackerRank snapshot write failed:', error instanceof Error ? error.message : error);
+    });
     return { data, fetchedAt: fetchedAt.toISOString(), fromCache: false, stale: false, error: null };
   } catch (error) {
     if (!(error instanceof HackerRankAdminError)) console.error('HackerRank admin fetch failed:', error instanceof Error ? error.message : error);
